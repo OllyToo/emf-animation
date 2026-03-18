@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Formula Focus: EMF Equation</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Playfair+Display:wght@700;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --border: #30363d;
+    --gold: #f0c040;
+    --teal: #39d0c8;
+    --red: #ff5f6d;
+    --blue: #58a6ff;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --glow-gold: 0 0 18px rgba(240,192,64,0.55);
+    --glow-teal: 0 0 18px rgba(57,208,200,0.55);
+    --glow-red: 0 0 18px rgba(255,95,109,0.55);
+  }
+
+  body {
+    background: var(--bg);
+    font-family: 'Space Mono', monospace;
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 720px;
+    overflow: hidden;
+    box-shadow: 0 8px 48px rgba(0,0,0,0.6);
+  }
+
+  /* ── HEADER ── */
+  .header {
+    padding: 24px 32px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: linear-gradient(135deg, #161b22 0%, #1a2332 100%);
+  }
+  .header-badge {
+    background: var(--gold);
+    color: #0d1117;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    text-transform: uppercase;
+  }
+  .header-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--text);
+    letter-spacing: -0.5px;
+  }
+
+  /* ── FORMULA DISPLAY ── */
+  .formula-section {
+    padding: 28px 32px 20px;
+    text-align: center;
+    background: radial-gradient(ellipse at 50% 0%, rgba(240,192,64,0.08) 0%, transparent 70%);
+  }
+  .formula {
+    font-family: 'Playfair Display', serif;
+    font-size: 52px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+    line-height: 1;
+  }
+  .f-epsilon { color: var(--gold); text-shadow: var(--glow-gold); transition: all 0.4s; }
+  .f-equals  { color: var(--muted); }
+  .f-I       { color: var(--teal);  text-shadow: var(--glow-teal); transition: all 0.4s; }
+  .f-paren   { color: var(--muted); }
+  .f-R       { color: var(--blue);  text-shadow: 0 0 18px rgba(88,166,255,0.55); transition: all 0.4s; }
+  .f-plus    { color: var(--muted); }
+  .f-r       { color: var(--red);   text-shadow: var(--glow-red); transition: all 0.4s; }
+
+  .formula-sub {
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  /* ── CIRCUIT SVG ── */
+  .circuit-section {
+    padding: 8px 32px 16px;
+    display: flex;
+    justify-content: center;
+  }
+  #circuit-svg {
+    width: 100%;
+    max-width: 560px;
+    height: auto;
+  }
+
+  /* Animated current dots */
+  .current-dot {
+    r: 5;
+    fill: var(--teal);
+    filter: drop-shadow(0 0 6px #39d0c8);
+    opacity: 0;
+  }
+  .current-dot.active { opacity: 1; }
+
+  /* ── VARIABLES GRID ── */
+  .vars-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    border-top: 1px solid var(--border);
+    background: var(--border);
+  }
+  .var-cell {
+    background: var(--panel);
+    padding: 18px 24px;
+    cursor: pointer;
+    transition: background 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .var-cell:hover { background: #1c2230; }
+  .var-cell.active { background: #1c2230; }
+  .var-cell::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .var-cell.active::before { opacity: 1; }
+
+  .var-cell.vc-epsilon::before { background: var(--gold); }
+  .var-cell.vc-I::before       { background: var(--teal); }
+  .var-cell.vc-R::before       { background: var(--blue); }
+  .var-cell.vc-r::before       { background: var(--red);  }
+
+  .var-symbol {
+    font-family: 'Playfair Display', serif;
+    font-size: 30px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .vc-epsilon .var-symbol { color: var(--gold); }
+  .vc-I       .var-symbol { color: var(--teal); }
+  .vc-R       .var-symbol { color: var(--blue); }
+  .vc-r       .var-symbol { color: var(--red);  }
+
+  .var-name {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .var-desc {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.5;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease, opacity 0.4s;
+    opacity: 0;
+  }
+  .var-cell.active .var-desc {
+    max-height: 80px;
+    opacity: 1;
+  }
+
+  /* ── SLIDER SECTION ── */
+  .slider-section {
+    padding: 20px 32px;
+    border-top: 1px solid var(--border);
+    background: linear-gradient(180deg, #161b22 0%, #0f1318 100%);
+  }
+  .slider-title {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+  .sliders {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px 32px;
+  }
+  .slider-row label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .slider-row label span:first-child { color: var(--text); font-weight: 700; }
+  .slider-row label span:last-child { font-size: 13px; }
+
+  input[type=range] {
+    width: 100%;
+    appearance: none;
+    height: 4px;
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range].s-I  { background: linear-gradient(to right, var(--teal) var(--pct, 50%), #30363d var(--pct, 50%)); }
+  input[type=range].s-R  { background: linear-gradient(to right, var(--blue) var(--pct, 50%), #30363d var(--pct, 50%)); }
+  input[type=range].s-r  { background: linear-gradient(to right, var(--red)  var(--pct, 50%), #30363d var(--pct, 50%)); }
+
+  input[type=range]::-webkit-slider-thumb {
+    appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--bg);
+    cursor: pointer;
+  }
+  input[type=range].s-I::-webkit-slider-thumb { background: var(--teal); box-shadow: var(--glow-teal); }
+  input[type=range].s-R::-webkit-slider-thumb { background: var(--blue); box-shadow: 0 0 10px rgba(88,166,255,0.7); }
+  input[type=range].s-r::-webkit-slider-thumb { background: var(--red);  box-shadow: var(--glow-red); }
+
+  .result-row {
+    margin-top: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(240,192,64,0.07);
+    border: 1px solid rgba(240,192,64,0.25);
+    border-radius: 8px;
+    padding: 12px 20px;
+  }
+  .result-label {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .result-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--gold);
+    text-shadow: var(--glow-gold);
+  }
+
+  /* ── FOOTER ── */
+  .footer {
+    border-top: 1px solid var(--border);
+    padding: 14px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .footer-tag {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .footer-eq {
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .footer-eq span { color: var(--gold); }
+
+  /* pulse animation on formula when slider changes */
+  @keyframes pulseGold {
+    0%   { transform: scale(1); }
+    50%  { transform: scale(1.08); }
+    100% { transform: scale(1); }
+  }
+  .pulse { animation: pulseGold 0.3s ease; }
+</style>
+</head>
+<body>
+<div class="card">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-badge">Formula Focus</div>
+    <div class="header-title">EMF & Internal Resistance</div>
+  </div>
+
+  <!-- FORMULA -->
+  <div class="formula-section">
+    <div class="formula">
+      <span class="f-epsilon">ε</span>
+      <span class="f-equals"> = </span>
+      <span class="f-I">I</span>
+      <span class="f-paren">(</span>
+      <span class="f-R">R</span>
+      <span class="f-plus"> + </span>
+      <span class="f-r">r</span>
+      <span class="f-paren">)</span>
+    </div>
+    <div class="formula-sub">Click a variable below to explore · Use sliders to see the relationship</div>
+  </div>
+
+  <!-- CIRCUIT DIAGRAM -->
+  <div class="circuit-section">
+    <svg id="circuit-svg" viewBox="0 0 560 220" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#39d0c8"/>
+        </marker>
+        <filter id="glow-gold">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="glow-teal">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+
+      <!-- Battery outline (dashed) -->
+      <rect x="16" y="60" width="130" height="100" rx="8"
+            fill="none" stroke="rgba(240,192,64,0.2)" stroke-width="1.5" stroke-dasharray="4 3"/>
+      <text x="81" y="54" text-anchor="middle" fill="rgba(240,192,64,0.5)"
+            font-family="Space Mono" font-size="10" letter-spacing="1">BATTERY / CELL</text>
+
+      <!-- Wires -->
+      <!-- top wire: battery+ → R → top-right -->
+      <path d="M146,80 L200,80 L200,50 L400,50 L400,80" fill="none" stroke="#30363d" stroke-width="2.5"/>
+      <!-- bottom wire: battery- → bottom-right -->
+      <path d="M146,140 L200,140 L200,170 L400,170 L400,140" fill="none" stroke="#30363d" stroke-width="2.5"/>
+
+      <!-- EMF source (battery cell symbol) -->
+      <!-- Long line = + -->
+      <line x1="146" y1="73" x2="146" y2="87" stroke="#f0c040" stroke-width="3.5" filter="url(#glow-gold)"/>
+      <!-- Short line = - -->
+      <line x1="125" y1="78" x2="125" y2="82" stroke="#f0c040" stroke-width="3.5" filter="url(#glow-gold)"/>
+      <line x1="104" y1="73" x2="104" y2="87" stroke="#f0c040" stroke-width="3.5" filter="url(#glow-gold)"/>
+      <line x1="83"  y1="78" x2="83"  y2="82" stroke="#f0c040" stroke-width="3.5" filter="url(#glow-gold)"/>
+      <!-- connect cell lines with wire -->
+      <line x1="16"  y1="80" x2="83"  y2="80" stroke="#30363d" stroke-width="2.5"/>
+      <line x1="146" y1="80" x2="200" y2="80" stroke="#30363d" stroke-width="0"/>
+
+      <!-- ε label -->
+      <text x="81" y="110" text-anchor="middle" fill="#f0c040"
+            font-family="Playfair Display, serif" font-size="22" font-weight="700"
+            filter="url(#glow-gold)">ε</text>
+      <text x="81" y="125" text-anchor="middle" fill="rgba(240,192,64,0.6)"
+            font-family="Space Mono" font-size="9">EMF</text>
+
+      <!-- Internal resistance r -->
+      <!-- zigzag from x=16 to x=83 on bottom wire -->
+      <polyline points="16,140 30,140 35,128 43,152 51,128 59,152 67,128 75,152 80,140 146,140"
+                fill="none" stroke="#ff5f6d" stroke-width="2.5" stroke-linejoin="round"/>
+      <text x="81" y="165" text-anchor="middle" fill="#ff5f6d"
+            font-family="Playfair Display, serif" font-size="16" font-weight="700">r</text>
+      <text x="81" y="176" text-anchor="middle" fill="rgba(255,95,109,0.6)"
+            font-family="Space Mono" font-size="8">INT. RES.</text>
+
+      <!-- External resistance R -->
+      <!-- zigzag from x=260 to x=370 on top wire -->
+      <polyline points="230,50 255,50 262,37 272,63 282,37 292,63 302,37 312,63 322,37 332,63 340,50 380,50"
+                fill="none" stroke="#58a6ff" stroke-width="2.5" stroke-linejoin="round"/>
+      <text x="305" y="30" text-anchor="middle" fill="#58a6ff"
+            font-family="Playfair Display, serif" font-size="16" font-weight="700">R</text>
+      <text x="305" y="20" text-anchor="middle" fill="rgba(88,166,255,0.6)"
+            font-family="Space Mono" font-size="8">EXT. RESISTANCE</text>
+
+      <!-- Voltmeter across R  -->
+      <circle cx="400" cy="110" r="22" fill="#1c2230" stroke="#58a6ff" stroke-width="1.5" opacity="0.7"/>
+      <text x="400" y="114" text-anchor="middle" fill="#58a6ff"
+            font-family="Space Mono" font-size="12" font-weight="700">V</text>
+      <line x1="400" y1="80"  x2="400" y2="88"  stroke="#58a6ff" stroke-width="1.5" opacity="0.7"/>
+      <line x1="400" y1="132" x2="400" y2="140" stroke="#58a6ff" stroke-width="1.5" opacity="0.7"/>
+
+      <!-- Current arrow labels -->
+      <text x="300" y="165" text-anchor="middle" fill="#39d0c8"
+            font-family="Space Mono" font-size="11" font-weight="700">I →</text>
+
+      <!-- Animated current dots -->
+      <!-- Path: top wire left→right, then right side down, bottom wire right→left, then left side up -->
+      <!-- top wire -->
+      <circle class="current-dot" id="d1"><animateMotion dur="3s" repeatCount="indefinite" begin="0s">
+        <mpath href="#toppath"/></animateMotion></circle>
+      <circle class="current-dot" id="d2"><animateMotion dur="3s" repeatCount="indefinite" begin="1s">
+        <mpath href="#toppath"/></animateMotion></circle>
+      <circle class="current-dot" id="d3"><animateMotion dur="3s" repeatCount="indefinite" begin="2s">
+        <mpath href="#toppath"/></animateMotion></circle>
+
+      <!-- circuit loop path for dots (conventional current: + terminal → external R → back to -) -->
+      <path id="toppath" d="M146,80 L200,80 L200,50 L400,50 L400,170 L200,170 L200,140 L16,140 L16,80 L83,80"
+            fill="none" stroke="none"/>
+
+      <!-- "lost volts" label -->
+      <text x="81" y="195" text-anchor="middle" fill="rgba(255,95,109,0.45)"
+            font-family="Space Mono" font-size="8" letter-spacing="0.5">ε − Ir = terminal p.d.</text>
+
+    </svg>
+  </div>
+
+  <!-- VARIABLE CARDS -->
+  <div class="vars-section">
+    <div class="var-cell vc-epsilon" onclick="toggleVar('epsilon')">
+      <div class="var-symbol">ε</div>
+      <div class="var-name">EMF — Electromotive Force</div>
+      <div class="var-desc">The total energy supplied per unit charge by the source. Measured in <strong>Volts (V)</strong>. It is NOT a force — it's the work done per coulomb moving charge around the whole circuit, including inside the cell.</div>
+    </div>
+    <div class="var-cell vc-I" onclick="toggleVar('I')">
+      <div class="var-symbol">I</div>
+      <div class="var-name">Current</div>
+      <div class="var-desc">The rate of flow of charge through the circuit. Measured in <strong>Amperes (A)</strong>. The same current flows through both R and r (series circuit), so I multiplies the total resistance.</div>
+    </div>
+    <div class="var-cell vc-R" onclick="toggleVar('R')">
+      <div class="var-symbol">R</div>
+      <div class="var-name">External Resistance</div>
+      <div class="var-desc">The resistance outside the cell — e.g. a lamp or resistor. Measured in <strong>Ohms (Ω)</strong>. The voltage across R is the <em>terminal p.d.</em> = IR, and is always less than ε.</div>
+    </div>
+    <div class="var-cell vc-r" onclick="toggleVar('r')">
+      <div class="var-symbol">r</div>
+      <div class="var-name">Internal Resistance</div>
+      <div class="var-desc">Resistance inside the cell itself. Measured in <strong>Ohms (Ω)</strong>. Causes a "lost volts" drop of <em>Ir</em>. A higher r means more energy wasted as heat inside the cell — common in old batteries!</div>
+    </div>
+  </div>
+
+  <!-- INTERACTIVE SLIDERS -->
+  <div class="slider-section">
+    <div class="slider-title">▶ Interactive — adjust values to compute ε</div>
+    <div class="sliders">
+      <div class="slider-row">
+        <label>
+          <span>I — Current</span>
+          <span id="lbl-I" style="color:var(--teal)">2.0 A</span>
+        </label>
+        <input type="range" class="s-I" id="sl-I" min="0.5" max="5" step="0.1" value="2.0" oninput="update()">
+      </div>
+      <div class="slider-row">
+        <label>
+          <span>R — External</span>
+          <span id="lbl-R" style="color:var(--blue)">4.0 Ω</span>
+        </label>
+        <input type="range" class="s-R" id="sl-R" min="1" max="20" step="0.5" value="4.0" oninput="update()">
+      </div>
+      <div class="slider-row">
+        <label>
+          <span>r — Internal</span>
+          <span id="lbl-r" style="color:var(--red)">1.0 Ω</span>
+        </label>
+        <input type="range" class="s-r" id="sl-r" min="0.1" max="5" step="0.1" value="1.0" oninput="update()">
+      </div>
+    </div>
+    <div class="result-row">
+      <div>
+        <div class="result-label">ε = I(R + r)</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:3px;" id="result-breakdown"></div>
+      </div>
+      <div class="result-value" id="result-emf">10.0 V</div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="footer-tag">A Level Physics · Formula Focus</div>
+    <div class="footer-eq">Total EMF = <span>terminal p.d. + lost volts</span></div>
+  </div>
+
+</div>
+
+<script>
+  // Show/hide current dots on load
+  document.querySelectorAll('.current-dot').forEach(d => d.classList.add('active'));
+
+  // Toggle variable expand
+  let activeVar = null;
+  function toggleVar(v) {
+    const map = { epsilon: 'vc-epsilon', I: 'vc-I', R: 'vc-R', r: 'vc-r' };
+    const formula = { epsilon:'f-epsilon', I:'f-I', R:'f-R', r:'f-r' };
+
+    document.querySelectorAll('.var-cell').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.formula span').forEach(s => s.style.transform = '');
+
+    if (activeVar === v) { activeVar = null; return; }
+    activeVar = v;
+
+    document.querySelector(`.${map[v]}`).classList.add('active');
+
+    // pulse the formula letter
+    const el = document.querySelector(`.${formula[v]}`);
+    if (el) {
+      el.classList.remove('pulse');
+      void el.offsetWidth;
+      el.classList.add('pulse');
+      setTimeout(() => el.classList.remove('pulse'), 400);
+    }
+  }
+
+  // Slider update
+  function update() {
+    const I = parseFloat(document.getElementById('sl-I').value);
+    const R = parseFloat(document.getElementById('sl-R').value);
+    const r = parseFloat(document.getElementById('sl-r').value);
+
+    document.getElementById('lbl-I').textContent = I.toFixed(1) + ' A';
+    document.getElementById('lbl-R').textContent = R.toFixed(1) + ' Ω';
+    document.getElementById('lbl-r').textContent = r.toFixed(1) + ' Ω';
+
+    const emf = I * (R + r);
+    const terminal = (I * R).toFixed(2);
+    const lost     = (I * r).toFixed(2);
+
+    document.getElementById('result-emf').textContent = emf.toFixed(2) + ' V';
+    document.getElementById('result-breakdown').textContent =
+      `terminal p.d. (IR) = ${terminal} V  |  lost volts (Ir) = ${lost} V`;
+
+    // Update slider track fill
+    ['I','R','r'].forEach(key => {
+      const sl = document.getElementById('sl-' + key);
+      const min = parseFloat(sl.min), max = parseFloat(sl.max);
+      const val = parseFloat(sl.value);
+      const pct = ((val - min) / (max - min) * 100).toFixed(1) + '%';
+      sl.style.setProperty('--pct', pct);
+    });
+
+    // Pulse EMF result
+    const res = document.getElementById('result-emf');
+    res.classList.remove('pulse');
+    void res.offsetWidth;
+    res.classList.add('pulse');
+    setTimeout(() => res.classList.remove('pulse'), 300);
+  }
+
+  // Init
+  update();
+</script>
+</body>
+</html>
